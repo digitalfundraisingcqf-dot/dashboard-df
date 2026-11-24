@@ -558,6 +558,11 @@ table.wide th.spc,table.wide td.spc{text-align:right;white-space:nowrap;border-r
 .pietbl td{text-align:right;padding:5px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .pietbl td i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:-1px}
 .pietbl tr.tot td{font-weight:700;border-bottom:0}
+.pcmp{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer}
+#piecmpm{font:inherit;font-size:.85rem;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg)}
+#piecmpm:disabled{opacity:.5}
+.pietbl .up{color:#1f9d7a}.pietbl .dn{color:#c2413b}.pietbl th small{display:block;font-weight:400;font-size:.68rem}
+@media (max-width:640px){.pietbl.cmp th:nth-child(5),.pietbl.cmp td:nth-child(5),.pietbl.cmp th:nth-child(6),.pietbl.cmp td:nth-child(6){display:none}}
 @media (max-width:640px){.pietbl th:nth-child(4),.pietbl td:nth-child(4){display:none}.pietbl{font-size:.8rem}.pietbl td,.pietbl th{padding:5px 3px}.piewrap{grid-template-columns:1fr}#piesvg{max-width:240px;margin:0 auto;display:block}}
 </style>
 <style id="rbcss">
@@ -738,9 +743,9 @@ table.wide th.spc,table.wide td.spc{text-align:right;white-space:nowrap;border-r
   </section>
   <section class="card" id="pie-card">
     <h2>Distribusi income per program <span class="period" id="pieper"></span></h2>
-    <div class="piebar"><div class="seg" role="group" aria-label="Sumber income"><button type="button" data-pie="all" class="on" aria-pressed="true">ID + INT</button><button type="button" data-pie="id" aria-pressed="false">ID</button><button type="button" data-pie="int" aria-pressed="false">INT</button></div><span class="piesum" id="piesum"></span></div>
+    <div class="piebar"><div class="seg" role="group" aria-label="Sumber income"><button type="button" data-pie="all" class="on" aria-pressed="true">ID + INT</button><button type="button" data-pie="id" aria-pressed="false">ID</button><button type="button" data-pie="int" aria-pressed="false">INT</button></div><label class="pcmp"><input type="checkbox" id="piecmp"> Bandingkan dengan</label><select id="piecmpm" aria-label="Periode pembanding" disabled><option value="prev">periode sebelumnya</option><option value="mon">tanggal sama bulan lalu</option></select><span class="piesum" id="piesum"></span></div>
     <div class="piewrap"><svg id="piesvg" viewBox="0 0 220 220" role="img" aria-label="Diagram distribusi income per program"></svg><table class="pietbl"><thead><tr><th>Program</th><th>Income</th><th>Porsi</th><th>Trx</th></tr></thead><tbody id="piebody"></tbody></table></div>
-    <p class="note">Mengikuti periode di bar atas. Program dengan porsi di bawah 2% digabung ke "Program lain". Arahkan kursor ke potongan diagram untuk melihat detailnya.</p>
+    <p class="note">Mengikuti periode di bar atas. Semua program ditampilkan. Centang "Bandingkan dengan" untuk menambah kolom periode sebelumnya (durasi sama, tepat sebelum periode ini) atau tanggal yang sama di bulan lalu. Arahkan kursor ke potongan diagram untuk melihat detailnya.</p>
   </section>
 
 
@@ -2430,23 +2435,33 @@ const DATA = {"dates":["2026-01-01","2026-01-02","2026-01-03","2026-01-04","2026
     const svg = document.getElementById('piesvg'); if (!svg) return;
     const PAL = ['#1f9d7a', '#3f6fd1', '#d9822b', '#7a5cc7', '#b0569a', '#2a9bb5', '#c2413b', '#8a9a2b', '#5b6b8a', '#e0a526', '#4f8f5a', '#9c6b4e'];
     let src = 'all', rng = null;
+    const cmpEl = document.getElementById('piecmp'), cmpM = document.getElementById('piecmpm');
+    const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const pd = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const prevRange = (a, b) => {
+      const A = pd(a), B = pd(b);
+      if (cmpM.value === 'mon') { const sh = (D) => { const y = D.getFullYear(), m = D.getMonth() - 1, last = new Date(y, m + 1, 0).getDate(); return new Date(y, m, Math.min(D.getDate(), last)); }; return [iso(sh(A)), iso(sh(B))]; }
+      const n = Math.round((B - A) / 864e5) + 1; const pb = new Date(A); pb.setDate(pb.getDate() - 1); const pa = new Date(pb); pa.setDate(pa.getDate() - n + 1); return [iso(pa), iso(pb)];
+    };
+    const colr = (i) => i < PAL.length ? PAL[i] : 'hsl(' + Math.round((i * 137.5) % 360) + ',45%,52%)';
     const NS = 'http://www.w3.org/2000/svg';
     const el = (n, a) => { const e = document.createElementNS(NS, n); Object.entries(a || {}).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
     const fmtPct = (x) => (x * 100).toFixed(1).replace('.', ',') + '%';
     const render = () => {
       const a = rng ? rng[0] : gFrom.value, b = rng ? rng[1] : gTo.value; if (!a || !b) return;
       document.getElementById('pieper').textContent = perTxt(a, b);
-      let L = PROGS.map((p) => { const r = sumP(p.k, a, b); const inc = src === 'id' ? r[0] : src === 'int' ? r[2] : r[0] + r[2]; const trx = src === 'id' ? r[1] : src === 'int' ? r[3] : r[1] + r[3]; return { n: p.n, inc, trx }; }).filter((x) => x.inc > 0).sort((x, y) => y.inc - x.inc);
-      const tot = L.reduce((s, x) => s + x.inc, 0), ttrx = L.reduce((s, x) => s + x.trx, 0);
-      const big = L.filter((x) => x.inc / tot >= 0.02), small = L.filter((x) => x.inc / tot < 0.02);
-      if (small.length > 1) { big.push({ n: 'Program lain (' + small.length + ')', inc: small.reduce((s, x) => s + x.inc, 0), trx: small.reduce((s, x) => s + x.trx, 0), other: small }); } else big.push(...small);
-      big.forEach((x, i) => { x.c = x.other ? '#9aa5b3' : PAL[i % PAL.length]; });
+      const cmp = cmpEl.checked, pr = cmp ? prevRange(a, b) : null;
+      const pick = (r) => [src === 'id' ? r[0] : src === 'int' ? r[2] : r[0] + r[2], src === 'id' ? r[1] : src === 'int' ? r[3] : r[1] + r[3]];
+      let L = PROGS.map((p) => { const [inc, trx] = pick(sumP(p.k, a, b)); const [pinc, ptrx] = pr ? pick(sumP(p.k, pr[0], pr[1])) : [0, 0]; return { n: p.n, inc, trx, pinc, ptrx }; }).filter((x) => x.inc > 0 || x.pinc > 0).sort((x, y) => y.inc - x.inc || y.pinc - x.pinc);
+      const tot = L.reduce((s, x) => s + x.inc, 0), ttrx = L.reduce((s, x) => s + x.trx, 0), ptot = L.reduce((s, x) => s + x.pinc, 0);
+      const big = L;
+      big.forEach((x, i) => { x.c = colr(i); });
       svg.replaceChildren();
       const cx = 110, cy = 110, R = 100, r0 = 60;
       if (!tot) { const t = el('text', { x: cx, y: cy, 'text-anchor': 'middle', class: 'pc1' }); t.textContent = 'Tidak ada income pada periode ini'; svg.appendChild(t); }
       else {
         let ang = -Math.PI / 2;
-        big.forEach((x) => {
+        big.filter((x) => x.inc > 0).forEach((x) => {
           const f = x.inc / tot, a1 = ang + f * 2 * Math.PI; const large = f > 0.5 ? 1 : 0;
           let d;
           if (f >= 0.9999) d = `M${cx} ${cy - R}A${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R}L${cx - 0.01} ${cy - r0}A${r0} ${r0} 0 1 0 ${cx} ${cy - r0}Z`;
@@ -2458,11 +2473,19 @@ const DATA = {"dates":["2026-01-01","2026-01-02","2026-01-03","2026-01-04","2026
         const t2 = el('text', { x: cx, y: cy + 16, 'text-anchor': 'middle', class: 'pc2' }); t2.textContent = tot >= 1e9 ? 'Rp ' + (tot / 1e9).toFixed(2).replace('.', ',') + ' M' : 'Rp ' + rp.format(Math.round(tot / 1e6)) + ' jt'; svg.appendChild(t2);
       }
       const tb = document.getElementById('piebody'); tb.replaceChildren();
-      big.forEach((x) => { const tr = document.createElement('tr'); const td0 = document.createElement('td'); const sw = document.createElement('i'); sw.style.background = x.c; td0.append(sw, document.createTextNode(x.n)); if (x.other) td0.title = x.other.map((o) => o.n).join(', '); tr.appendChild(td0); [money(x.inc), fmtPct(x.inc / tot), num(x.trx)].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); }); tb.appendChild(tr); });
-      if (tot) { const tr = document.createElement('tr'); tr.className = 'tot'; ['Total', money(tot), '100%', num(ttrx)].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); }); tb.appendChild(tr); }
-      document.getElementById('piesum').textContent = L.length + ' program dengan income' + (src === 'int' ? ' (INT)' : src === 'id' ? ' (ID)' : '');
+      const tbl = tb.closest('table'); tbl.classList.toggle('cmp', cmp);
+      const hd = tbl.querySelector('thead tr'); hd.replaceChildren();
+      const th = (t, s) => { const e = document.createElement('th'); e.textContent = t; if (s) { const sm = document.createElement('small'); sm.textContent = s; e.appendChild(sm); } hd.appendChild(e); };
+      const shortP = (x, y) => { const f = (s) => { const D = pd(s); return D.getDate() + ' ' + ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][D.getMonth()]; }; return x === y ? f(x) : f(x) + '–' + f(y); };
+      if (cmp) { th('Program'); th('Sekarang', shortP(a, b)); th('Sebelumnya', shortP(pr[0], pr[1])); th('Perubahan'); th('Porsi'); th('Trx'); } else { th('Program'); th('Income'); th('Porsi'); th('Trx'); }
+      const chg = (c, p) => { if (!p) return c ? ['baru', 'up'] : ['–', '']; const d = (c - p) / p; return [(d >= 0 ? '+' : '') + (d * 100).toFixed(1).replace('.', ',') + '%', d >= 0 ? 'up' : 'dn']; };
+      const row = (cells, cls) => { const tr = document.createElement('tr'); if (cls) tr.className = cls; cells.forEach((v, k) => { const td = document.createElement('td'); if (k === 0 && v.sw) { const sw = document.createElement('i'); sw.style.background = v.sw; td.append(sw, document.createTextNode(v.t)); } else if (Array.isArray(v)) { td.textContent = v[0]; if (v[1]) td.className = v[1]; } else td.textContent = v; tr.appendChild(td); }); tb.appendChild(tr); };
+      big.forEach((x) => { const pct = tot ? fmtPct(x.inc / tot) : '–'; if (cmp) row([{ sw: x.c, t: x.n }, money(x.inc), money(x.pinc), chg(x.inc, x.pinc), pct, num(x.trx)]); else row([{ sw: x.c, t: x.n }, money(x.inc), pct, num(x.trx)]); });
+      if (tot || ptot) { if (cmp) row(['Total', money(tot), money(ptot), chg(tot, ptot), '100%', num(ttrx)], 'tot'); else row(['Total', money(tot), '100%', num(ttrx)], 'tot'); }
+      document.getElementById('piesum').textContent = L.filter((x) => x.inc > 0).length + ' program dengan income' + (src === 'int' ? ' (INT)' : src === 'id' ? ' (ID)' : '') + (cmp && pr[0] < '2026-01-01' ? ' · data pembanding sebelum 1 Jan 2026 tidak tersedia' : '');
     };
     document.querySelectorAll('[data-pie]').forEach((btn) => btn.addEventListener('click', () => { src = btn.dataset.pie; document.querySelectorAll('[data-pie]').forEach((x) => { const on = x === btn; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); render(); }));
+    cmpEl.addEventListener('change', () => { cmpM.disabled = !cmpEl.checked; render(); }); cmpM.addEventListener('change', render);
     SYNC.pie = (a, b) => { rng = [a, b]; render(); };
     setTimeout(render, 0);
   })();
