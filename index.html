@@ -285,6 +285,14 @@
   .side a.nv.on { background: color-mix(in srgb, var(--roas) 14%, var(--panel)); color: color-mix(in srgb, var(--roas) 85%, var(--fg)); font-weight: 600; }
   .side a.nv.on svg { opacity: 1; }
   .side a.nv:focus-visible { outline: 2px solid var(--roas); outline-offset: -2px; }
+  .side a.nv.nv-ram { margin-top: 10px; background: #14213d; color: #ffd166; font-weight: 800; letter-spacing: .04em; box-shadow: inset 0 0 0 1px #ffd16655; }
+  .side a.nv.nv-ram svg { opacity: 1; stroke: #ffd166; }
+  .side a.nv.nv-ram:hover, .side a.nv.nv-ram.on { background: #0b1530; color: #ffe08a; }
+  #ram-card { text-align: center; padding: 64px 20px; background: linear-gradient(160deg, #14213d, #0b1530); color: #fff; border: 0; }
+  #ram-card h2 { color: #ffd166; font-size: 1.6rem; letter-spacing: .06em; justify-content: center; }
+  #ram-card .cs { font-size: 2.2rem; font-weight: 800; margin: 18px 0 8px; color: #fff; }
+  #ram-card p { color: #c9d3ea; margin: 0; }
+  body[data-page="ramadhan"] #gbar, body[data-page="ramadhan"] details.about { display: none; }
   .side .sf { margin-top: auto; padding: 14px 8px 0; border-top: 1px solid var(--line); font-size: .74rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
   .dbadge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: .78rem; font-weight: 600; padding: 4px 11px; border-radius: 999px; background: color-mix(in srgb, var(--trx) 13%, var(--panel)); color: color-mix(in srgb, var(--trx) 85%, var(--fg)); }
   .dbadge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--trx); }
@@ -637,6 +645,7 @@ table.wide th.spc,table.wide td.spc{text-align:right;white-space:nowrap;border-r
 <div class="shell">
 <nav class="side" id="side" aria-label="Navigasi dashboard">
   <div class="sb"><img src="data:image/png;base64,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" alt=""><div><b>Digital Funding</b><span>Performance</span></div></div>
+  <a class="nv nv-ram" href="#ram-card" data-t="ram-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/><path d="M17 3.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></svg>RAMADHAN 2027</a>
   <div class="ng">Ringkasan</div>
   <a class="nv" href="#sum-card" data-t="sum-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Ringkasan</a>
   <a class="nv" href="#trend-card" data-t="trend-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Tren harian</a>
@@ -947,6 +956,12 @@ table.wide th.spc,table.wide td.spc{text-align:right;white-space:nowrap;border-r
     </div>
     <div class="rres" id="rres" hidden></div>
   </section>
+  <section class="card" id="ram-card" aria-labelledby="ram-h">
+    <h2 id="ram-h">RAMADHAN 2027</h2>
+    <div class="cs">Coming Soon..</div>
+    <p>Halaman khusus kampanye Ramadhan 2027 sedang disiapkan.</p>
+  </section>
+
   <section class="card" id="tim-card">
     <h2>Kalender &amp; Catatan <span class="tag team">khusus tim</span></h2>
     <div class="tlock" id="tim-lock">
@@ -2529,7 +2544,7 @@ const DATA = {"dates":["2026-01-01","2026-01-02","2026-01-03","2026-01-04","2026
     syncRep(); if (repSec) new MutationObserver(syncRep).observe(repSec, { attributes: true, attributeFilter: ['hidden'] });
     const setOn = (i) => links.forEach((a, j) => { const on = j === i; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
     // Pages: sidebar groups act as tabs; sections of other groups are hidden
-    const PAGES = { ringkasan: ['sum-card', 'trend-card', 'pie-card', 'top-card'], capaian: ['cap-card'], harian: ['daily-card'], fundraiser: ['fr-card'], konten: ['cnt-card'], report: ['rb-card', 'rep-card'], tim: ['tim-card'] };
+    const PAGES = { ringkasan: ['sum-card', 'trend-card', 'pie-card', 'top-card'], capaian: ['cap-card'], harian: ['daily-card'], fundraiser: ['fr-card'], konten: ['cnt-card'], report: ['rb-card', 'rep-card'], tim: ['tim-card'], ramadhan: ['ram-card'] };
     const pageOf = (id) => Object.keys(PAGES).find((k) => PAGES[k].includes(id)) || 'ringkasan';
     const head = document.querySelector('.head');
     let page = '';
